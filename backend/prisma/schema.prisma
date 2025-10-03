@@ -169,17 +169,7 @@ model ReadReceipt {
   @@map("read_receipts")
 }
 
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
 
-  @@index([token])
-  @@index([userId])
-  @@map("refresh_tokens")
-}
 
 model Session {
   id        String   @id

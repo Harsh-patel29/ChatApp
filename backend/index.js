@@ -1,16 +1,28 @@
-import express from "express";
-import dotenv from "dotenv";
+import { app } from "./src/app.js";
+import { auth } from "./src/utils/auth.js";
+import { ApiError } from "./src/utils/ApiError.js";
+import { ApiResponse } from "./src/utils/ApiResponse.js";
+import { fromNodeHeaders } from "better-auth/node";
+import { PrismaClient } from "@prisma/client";
 
-dotenv.config();
-const app = express();
+const prisma = new PrismaClient();
 
 const port = process.env.PORT || 4000;
-app.use(express.json());
 
 app.listen(port, () => {
   console.log("App is listening to", `http://localhost:${port}`);
 });
 
-app.get("/", (req, res) => {
-  res.send("Chat App backend Running...✅");
+app.get("/api/me", async (req, res) => {
+  // await prisma.user.deleteMany();
+  // console.log("headers", req.headers);
+  try {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+    return res.status(200).json(new ApiResponse(200, session, session));
+  } catch (error) {
+    console.log("error", error);
+    throw new ApiError(500, "s", error);
+  }
 });
