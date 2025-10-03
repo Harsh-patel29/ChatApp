@@ -13,10 +13,167 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum status {
+  ONLINE
+  OFFLINE
+  AWAY
+  BUSY
+}
 
-model User{
-  id Int @id @default(autoincrement())
-  name String
-  email String
+enum ParticipantRole {
+  ADMIN
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  AUDIO
+  IMAGE
+  VIDEO
+  FILE
+  SYSTEM // for system message like User joined the Group
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  avatar    String?
+  bio       String?
+  Status    status   @default(OFFLINE)
+  lastseen  DateTime @default(now())
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdConversation Conversation[]             @relation("ConversationCreator")
+  conversations       ConversationParticipants[]
+  sentMessages        Message[]                  @relation("SentMessages")
+  messageReactions    MessageReaction[]
+  readReceipts        ReadReceipt[]
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+model Conversation {
+  id            String    @id @default(uuid())
+  name          String?
+  isGroup       Boolean   @default(false)
+  avatar        String?
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastMessageAt DateTime?
+
+  creator      User?                      @relation("ConversationCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  participants ConversationParticipants[]
+  messages     Message[]
+
+  @@index([lastMessageAt])
+  @@index([createdBy])
+  @@map("conversations")
+}
+
+model ConversationParticipants {
+  id             String          @id @default(uuid())
+  conversationId String
+  userId         String
+  role           ParticipantRole @default(MEMBER)
+  joinedAt       DateTime        @default(now())
+  leftAt         DateTime?
+  isMuted        Boolean         @default(false)
+  isArchived     Boolean         @default(false)
+  isPinned       Boolean         @default(false)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String      @db.Text
+  messageType    MessageType @default(TEXT)
+  replyToId      String? // for threaded replies
+  isEdited       Boolean     @default(false)
+  isDeleted      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  conversation Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User              @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo      Message?          @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]         @relation("MessageReplies")
+  attachments  Attachment[]
+  reactions    MessageReaction[]
+  readReceipts ReadReceipt[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([replyToId])
+  @@map("messages")
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  messageId String
+  fileName  String
+  fileUrl   String
+  fileType  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("attachments")
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("message_reactions")
+}
+
+model ReadReceipt {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@map("read_receipts")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@map("refresh_tokens")
 }
