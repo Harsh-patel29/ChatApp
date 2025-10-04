@@ -15,7 +15,6 @@ export const signUpUser = AsyncHandler(async (req, res) => {
         image,
       },
     });
-    console.log(createUser);
     return res
       .status(200)
       .json(new ApiResponse(200, "User created Successfully", createUser));
@@ -38,7 +37,6 @@ export const signInUser = AsyncHandler(async (req, res) => {
       returnHeaders: true,
     });
 
-    console.log(user.headers);
     if (user.headers) {
       const setCookieHeader = user.headers.get("set-cookie");
       if (setCookieHeader) {
@@ -53,4 +51,21 @@ export const signInUser = AsyncHandler(async (req, res) => {
     console.log(error);
     throw new ApiError(500, "Something Went Wrong while signing user", error);
   }
+});
+
+export const signOut = AsyncHandler(async (req, res) => {
+  const logoutUser = await auth.api.signOut({
+    headers: fromNodeHeaders(req.headers),
+    returnHeaders: true,
+  });
+  console.log(logoutUser.headers);
+  if (logoutUser.headers) {
+    const setCookieHeader = logoutUser.headers.get("set-cookie");
+    if (setCookieHeader) {
+      res.setHeader("set-cookie", setCookieHeader);
+    }
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "User LoggedOut Successfully", logoutUser));
 });
