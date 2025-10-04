@@ -2,7 +2,9 @@ version: "3.8"
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: /Dockerfile
     container_name: chatapp-backend
     ports:
       - "5000:5000"
@@ -105,6 +107,22 @@ services:
         condition: service_healthy
     command: npx prisma studio --port 5555 --browser none
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chatapp-frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    stdin_open: true
+    tty: true
 
 volumes:
   postgres_data:
