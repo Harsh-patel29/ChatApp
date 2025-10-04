@@ -34,7 +34,6 @@ export const auth = betterAuth({
   session: {
     expiresIn: 604800,
     updateAge: 86400,
-    disableSessionRefresh: true,
     storeSessionInDatabase: true,
     preserveSessionInDatabase: false,
     cookieCache: {
