@@ -116,14 +116,16 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - ./frontend/.env
+      - .env
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    stdin_open: true
-    tty: true
-
+      - ./frontend:/src
+      - /src/node_modules
+      - /src/.next
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend
+    command: npm run dev
 volumes:
   postgres_data:
   redis_data:
