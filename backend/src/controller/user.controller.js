@@ -17,10 +17,42 @@ export const signUpUser = AsyncHandler(async (req, res) => {
     });
     return res
       .status(200)
-      .json(new ApiResponse(200, "User created Successfully", createUser));
+      .json(
+        new ApiResponse(
+          200,
+          "Account created Successfully!! Please check your email for verification",
+          createUser
+        )
+      );
   } catch (error) {
     console.log(error);
     throw new ApiError(500, "Something Went Wrong while creating user", error);
+  }
+});
+
+export const signInSocial = AsyncHandler(async (req, res) => {
+  try {
+    const data = await auth.api.signInSocial({
+      body: {
+        provider: "google",
+      },
+      headers: fromNodeHeaders(req.headers),
+      returnHeaders: true,
+    });
+
+    if (data.headers) {
+      const setCookieHeader = user.headers.get("set-cookie");
+      if (setCookieHeader) {
+        res.setHeader("set-cookie", setCookieHeader);
+      }
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "User signenIn Successfully", data));
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "Something Went Wrong while signing user", error);
   }
 });
 
@@ -58,7 +90,6 @@ export const signOut = AsyncHandler(async (req, res) => {
     headers: fromNodeHeaders(req.headers),
     returnHeaders: true,
   });
-  console.log(logoutUser.headers);
   if (logoutUser.headers) {
     const setCookieHeader = logoutUser.headers.get("set-cookie");
     if (setCookieHeader) {
