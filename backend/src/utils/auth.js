@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword, verifyPassword } from "../libs/hashPassword.js";
+import { SendEmail, emailVerificationContent } from "./nodemailer.js";
 
 const prisma = new PrismaClient();
 
@@ -9,6 +10,7 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  trustedOrigins: ["http://localhost:3000"],
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -28,7 +30,13 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }, request) => {
-      // TODO:- Create A sendEmail method
+      const template = emailVerificationContent(user.name, url);
+      await SendEmail({
+        to: user.email,
+        subject: "Verify your email address",
+        text: `Click the button to verify your email: ${url}`,
+        mailgenContent: template,
+      });
     },
   },
   session: {
@@ -41,7 +49,6 @@ export const auth = betterAuth({
       maxAge: 300,
     },
   },
-
   user: {
     deleteUser: {
       enabled: true,
@@ -64,9 +71,11 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
+      accessType: "offline",
+      prompt: "select_account consent",
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      redirectURI: `${process.env.FRONTEND_URL}/api/auth/callback/google`,
+      disableImplicitSignUp: true,
     },
   },
   rateLimit: {
