@@ -90,7 +90,7 @@ export default function SignIn() {
                   email,
                   password,
                   rememberMe,
-                  callbackURL: "http://localhost:3000/dashboard",
+                  callbackURL: "http://localhost:3000/",
                 },
                 {
                   onError: (err) => {
@@ -127,7 +127,7 @@ export default function SignIn() {
                 await signIn.social(
                   {
                     provider: "google",
-                    callbackURL: "http://localhost:3000/dashboard",
+                    callbackURL: "http://localhost:3000/",
                   },
                   {
                     onRequest: (ctx) => {

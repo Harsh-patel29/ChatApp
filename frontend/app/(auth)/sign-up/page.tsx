@@ -43,7 +43,7 @@ export default function SignUp() {
   };
 
   return (
-    <Card className="z-50 rounded-md rounded-t-none max-w-md">
+    <Card className="z-50 rounded-md max-w-md">
       <CardHeader>
         <CardTitle className="text-lg md:text-xl">Sign Up</CardTitle>
         <CardDescription className="text-xs md:text-sm">
@@ -140,6 +140,10 @@ export default function SignUp() {
             className="w-full cursor-pointer"
             disabled={loading}
             onClick={async () => {
+              if (!firstName || !lastName) {
+                toast.error("First and Last name is required");
+                return;
+              }
               await signUp.email({
                 email,
                 password,
@@ -184,7 +188,7 @@ export default function SignUp() {
                   {
                     provider: "google",
                     requestSignUp: true,
-                    callbackURL: "http://localhost:3000/dashboard",
+                    callbackURL: "http://localhost:3000/sign-in",
                   },
                   {
                     onRequest: (ctx) => {
