@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { nextUrl } = request;
   const sessionCookie = getSessionCookie(request);
 
-  const publicRoutes: string[] = [];
+  const publicRoutes: string[] = ["/", "/auth/error"];
   const authRoutes: string[] = ["/sign-in", "/sign-up"];
   const DEFAULT_LOGIN_REDIRECT = "/";
 
