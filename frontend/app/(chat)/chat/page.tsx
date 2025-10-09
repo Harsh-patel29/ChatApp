@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +13,8 @@ import {
   Paperclip,
 } from "lucide-react";
 import Link from "next/link";
+import { getFriend } from "@/apis/friend.api";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Message {
   id: number;
@@ -22,52 +24,24 @@ interface Message {
   isOwn: boolean;
 }
 
-interface Conversation {
-  id: number;
+interface Freind {
+  Status: string;
+  bio?: string | null;
+  createdAt: string;
+  email: string;
+  emailVerified: boolean;
+  id: string;
+  image?: string;
+  lastseen: string;
   name: string;
-  lastMessage: string;
-  time: string;
-  unread?: number;
+  password?: string | null;
+  updatedAt: string;
 }
 
 const Chat = () => {
-  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
-
-  const conversations: Conversation[] = [
-    {
-      id: 1,
-      name: "Alice Johnson",
-      lastMessage: "See you tomorrow!",
-      time: "2m",
-      unread: 2,
-    },
-    {
-      id: 2,
-      name: "Team Project",
-      lastMessage: "Great work everyone",
-      time: "15m",
-    },
-    {
-      id: 3,
-      name: "Bob Smith",
-      lastMessage: "Thanks for the update",
-      time: "1h",
-    },
-    {
-      id: 4,
-      name: "Design Team",
-      lastMessage: "New mockups ready",
-      time: "2h",
-      unread: 5,
-    },
-    {
-      id: 5,
-      name: "Carol White",
-      lastMessage: "Let's schedule a meeting",
-      time: "3h",
-    },
-  ];
+  const [friend, setFriend] = useState<Freind[] | []>([]);
 
   const messages: Message[] = [
     {
@@ -121,9 +95,17 @@ const Chat = () => {
     },
   ];
 
+  const getFriendList = async () => {
+    const result = await getFriend();
+    setFriend(result.data);
+  };
+
+  useEffect(() => {
+    getFriendList();
+  }, []);
+
   const handleSendMessage = () => {
     if (messageInput.trim()) {
-      // Handle message sending
       setMessageInput("");
     }
   };
@@ -170,36 +152,45 @@ const Chat = () => {
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 max-h-[92%]">
             <div className="p-2">
-              {conversations.map((conv) => (
+              {friend.map((frd) => (
                 <button
-                  key={conv.id}
-                  onClick={() => setSelectedChat(conv.id)}
+                  key={frd.id}
+                  onClick={() => setSelectedChat(frd.id)}
                   className={`w-full p-4 rounded-lg mb-2 text-left transition-all hover:bg-muted/50 ${
-                    selectedChat === conv.id ? "bg-muted" : ""
+                    selectedChat === frd.id ? "bg-muted" : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold flex-shrink-0">
-                      {conv.name.charAt(0)}
+                      {frd.image ? (
+                        <Avatar className="w-12 h-12 rounded-full overflow-hidden border-0 p-0">
+                          <AvatarImage
+                            src={frd.image}
+                            className="w-full h-full object-fill"
+                          />
+                        </Avatar>
+                      ) : (
+                        frd.name.charAt(0)
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold truncate">{conv.name}</h3>
+                        <h3 className="font-semibold truncate">{frd.name}</h3>
                         <span className="text-xs text-muted-foreground">
-                          {conv.time}
+                          {/* {frd.time} */}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground truncate">
-                          {conv.lastMessage}
+                          {/* {frd.lastMessage} */}
                         </p>
-                        {conv.unread && (
+                        {/* {conv.unread && (
                           <span className="bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full ml-2">
                             {conv.unread}
                           </span>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </div>
