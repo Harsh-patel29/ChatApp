@@ -44,7 +44,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 import userRoute from "./routes/user.routes.js";
-
+import friendRoute from "./routes/friend.route.js";
 app.use("/api/auth", userRoute);
+app.use("/api/v1/friend", friendRoute);
 
 export { app };
