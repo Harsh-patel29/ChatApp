@@ -1,9 +1,17 @@
 "use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Search, MoreVertical, ArrowLeft, Paperclip } from "lucide-react";
+import {
+  MessageSquare,
+  Send,
+  Search,
+  MoreVertical,
+  ArrowLeft,
+  Paperclip,
+} from "lucide-react";
 import Link from "next/link";
 
 interface Message {
@@ -23,7 +31,7 @@ interface Conversation {
 }
 
 const Chat = () => {
-  const [selectedChat, setSelectedChat] = useState<number>(1);
+  const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
 
   const conversations: Conversation[] = [
@@ -115,6 +123,7 @@ const Chat = () => {
 
   const handleSendMessage = () => {
     if (messageInput.trim()) {
+      // Handle message sending
       setMessageInput("");
     }
   };
@@ -122,12 +131,13 @@ const Chat = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
+      // Handle file upload
+      console.log("Selected files:", files);
     }
   };
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Header */}
       <header className="border-b border-border bg-secondary/50 backdrop-blur-sm z-10 flex-shrink-0">
         <div className="px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -140,7 +150,7 @@ const Chat = () => {
               ChatApp
             </h1>
           </div>
-          <Link href="/friend_demo">
+          <Link href="/friend">
             <Button variant="hero" size="md" className="cursor-pointer mr-4">
               Add Freinds
             </Button>
@@ -200,100 +210,122 @@ const Chat = () => {
         </div>
 
         <div className="flex-1 flex flex-col">
-          <div>
-            <div className="p-4 border-b border-border bg-secondary/30 flex justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-                  A
-                </div>
-                <div>
-                  <h2 className="font-semibold">Alice Johnson</h2>
-                  <p className="text-sm text-muted-foreground">Online</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1 p-4 max-h-[77%]">
-            <div className="space-y-4 max-w-4xl mx-auto">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.isOwn ? "justify-end" : "justify-start"
-                  } animate-fade-in`}
-                >
-                  <div
-                    className={`flex gap-3 max-w-[70%] ${
-                      message.isOwn ? "flex-row-reverse" : ""
-                    }`}
-                  >
-                    {!message.isOwn && (
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs flex-shrink-0">
-                        {message.sender.charAt(0)}
-                      </div>
-                    )}
+          {selectedChat ? (
+            <>
+              <div>
+                <div className="p-4 border-b border-border bg-secondary/30 flex justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
+                      A
+                    </div>
                     <div>
-                      {!message.isOwn && (
-                        <p className="text-xs text-muted-foreground mb-1">
-                          {message.sender}
-                        </p>
-                      )}
-                      <div
-                        className={`rounded-2xl px-4 py-3 ${
-                          message.isOwn
-                            ? "bg-primary text-primary-foreground rounded-br-sm"
-                            : "bg-card text-card-foreground rounded-bl-sm shadow-subtle"
-                        }`}
-                      >
-                        <p>{message.content}</p>
-                      </div>
-                      <p
-                        className={`text-xs text-muted-foreground mt-1 ${
-                          message.isOwn ? "text-right" : ""
-                        }`}
-                      >
-                        {message.time}
-                      </p>
+                      <h2 className="font-semibold">Alice Johnson</h2>
+                      <p className="text-sm text-muted-foreground">Online</p>
                     </div>
                   </div>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+              </div>
 
-          <div className="p-4 border-t border-border bg-secondary/30">
-            <div className="flex gap-2 max-w-4xl mx-auto">
-              <Input
-                placeholder="Type a message..."
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                className="flex-1 bg-input"
-              />
-              <input
-                type="file"
-                id="file-upload"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => document.getElementById("file-upload")?.click()}
-                title="Attach files"
-              >
-                <Paperclip className="h-5 w-5" />
-              </Button>
-              <Button variant="hero" onClick={handleSendMessage}>
-                <Send className="h-5 w-5" />
-              </Button>
+              <ScrollArea className="flex-1 p-4 max-h-[77%]">
+                <div className="space-y-4 max-w-4xl mx-auto">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${
+                        message.isOwn ? "justify-end" : "justify-start"
+                      } animate-fade-in`}
+                    >
+                      <div
+                        className={`flex gap-3 max-w-[70%] ${
+                          message.isOwn ? "flex-row-reverse" : ""
+                        }`}
+                      >
+                        {!message.isOwn && (
+                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs flex-shrink-0">
+                            {message.sender.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          {!message.isOwn && (
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {message.sender}
+                            </p>
+                          )}
+                          <div
+                            className={`rounded-2xl px-4 py-3 ${
+                              message.isOwn
+                                ? "bg-primary text-primary-foreground rounded-br-sm"
+                                : "bg-card text-card-foreground rounded-bl-sm shadow-subtle"
+                            }`}
+                          >
+                            <p>{message.content}</p>
+                          </div>
+                          <p
+                            className={`text-xs text-muted-foreground mt-1 ${
+                              message.isOwn ? "text-right" : ""
+                            }`}
+                          >
+                            {message.time}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+
+              <div className="p-4 border-t border-border bg-secondary/30">
+                <div className="flex gap-2 max-w-4xl mx-auto">
+                  <Input
+                    placeholder="Type a message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    className="flex-1 bg-input"
+                  />
+                  <input
+                    type="file"
+                    id="file-upload"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                      document.getElementById("file-upload")?.click()
+                    }
+                    title="Attach files"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  <Button variant="hero" onClick={handleSendMessage}>
+                    <Send className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-4 animate-fade-in">
+                <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                  <MessageSquare className="w-10 h-10 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-semibold mb-2">
+                    Welcome to ChatApp
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Select a conversation to start chatting
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
