@@ -30,7 +30,7 @@ const Landing = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href={!useSession().data ? "/sign-in" : "/chat_demo"}>
+              <Link href={!useSession().data ? "/sign-in" : "/chat"}>
                 <Button
                   variant="hero"
                   size="lg"
@@ -92,7 +92,7 @@ const Landing = () => {
               Join thousands of teams already using our platform to stay
               connected.
             </p>
-            <Link href="/dashboard">
+            <Link href={!useSession().data ? "/sign-in" : "/chat"}>
               <Button
                 variant="outline"
                 size="lg"
