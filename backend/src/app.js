@@ -45,7 +45,10 @@ app.use(express.static("public"));
 
 import userRoute from "./routes/user.routes.js";
 import friendRoute from "./routes/friend.route.js";
+import conversationRoute from "./routes/conversation.route.js";
+
 app.use("/api/auth", userRoute);
 app.use("/api/v1/friend", friendRoute);
+app.use("/api/v1/conversation", conversationRoute);
 
 export { app };
