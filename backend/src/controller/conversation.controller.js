@@ -17,7 +17,6 @@ export const fetchConversation = AsyncHandler(async (req, res) => {
       where: {
         conversationId: conversationId,
         sender: {
-          // you can also use senderId directly
           AND: {
             id: req.user.id,
           },
@@ -39,31 +38,6 @@ export const fetchConversation = AsyncHandler(async (req, res) => {
     );
   } catch (error) {
     throw new ApiError(500, "Failed to Fetch Messages", error);
-  }
-});
-
-const sendMessage = AsyncHandler(async (req, res) => {
-  try {
-    const { MessageContent } = req.body;
-
-    const sentMessage = await prisma.message.create({
-      data: {
-        conversationId: req.query.convId,
-        senderId: req.user.id,
-        content: MessageContent,
-        messageType: "TEXT",
-        sender: req.user,
-      },
-    });
-    return res
-      .staus(201)
-      .json(new ApiResponse(201, "Message Sent Successfully", sentMessage));
-  } catch (error) {
-    throw new ApiError(
-      500,
-      "Something went wrong while sending Message",
-      error
-    );
   }
 });
 
