@@ -1,9 +1,7 @@
 import { Server } from "socket.io";
 import { ConnectionManager } from "./connectionManager.js";
-import { HandleTyping } from "./handlers/typingHandlers.js";
 import { SendMessage } from "./handlers/messageHandler.js";
 import { StausHandler } from "./handlers/statusHandler.js";
-import { client } from "../redis/client.js";
 
 export class initWebSocket {
   constructor(server) {
@@ -15,13 +13,11 @@ export class initWebSocket {
       pingTimeout: 60000,
       pingInterval: 25000,
     });
-    this.typingHandler = new HandleTyping();
     this.connectionManager = new ConnectionManager();
     this.sendMessage = new SendMessage();
     this.statushandler = new StausHandler();
     this.#setupMiddleware();
     this.#setupEventHandler();
-    // this.setupKafkaConsumer();
   }
 
   #setupMiddleware() {

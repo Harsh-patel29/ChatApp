@@ -32,8 +32,6 @@ export class StausHandler {
     }
   }
 
-  // for harsh patel to send typing i will need his socker id which will be get by ws:user:socket:userId
-
   async typing(recieverId, io) {
     const recieverSockets = await client.smembers(
       `ws:user:sockets:${recieverId}`
@@ -42,6 +40,6 @@ export class StausHandler {
       io.to(sid).emit("user:typing", { recieverId });
     });
 
-    console.log("User typing sent to ", recieverSockets);
+    console.log("User typing sent to ", recieverSockets.length);
   }
 }
