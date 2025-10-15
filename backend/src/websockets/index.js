@@ -63,6 +63,14 @@ export class initWebSocket {
         await this.sendMessage.SendMessage(socket, data);
       });
 
+      socket.on("joinConversation", ({ conversationId }) => {
+        socket.join(conversationId);
+      });
+
+      socket.on("leaveConversation", ({ conversationId }) => {
+        socket.leave(conversationId);
+      });
+
       socket.on("disconnect", async () => {
         await this.connectionManager.removeConnection(socket.id, this.io);
         await this.statushandler.notifyOffline(userId, this.io);
