@@ -1,15 +1,9 @@
 "use client";
 
-import React, {
-  UIEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   MessageSquare,
   Send,
@@ -20,10 +14,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getConversations, getUserMessages } from "@/apis/conversation.api";
+import { getConversations, getMessages } from "@/apis/conversation.api";
 import { useWebSocket } from "@/hooks/websockets";
 import { useSession } from "@/lib/client";
-import { Textarea } from "@/components/ui/textarea";
 
 interface conversations {
   id: string;
@@ -48,20 +41,6 @@ interface participants {
   isArchived: boolean;
   isPinned: boolean;
   user: Friend;
-}
-
-interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  content: string;
-  messageType: MessageType;
-  replyToId: string | null;
-  isEdited: boolean;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-  timeStamp?: number;
 }
 
 interface Friend {
@@ -107,13 +86,13 @@ const Chat = () => {
   const [selectedChat, setSelectedChat] = useState<conversations | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [conversation, setConversation] = useState<conversations[] | []>([]);
-  const [messages, setMessages] = useState<Message[] | []>([]);
   const [nextId, setNextId] = useState<nextId | null>(null);
   const [ConvNextId, setConvNextId] = useState<nextId | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [ConvLoading, setConvLoading] = useState(false);
   const [ConvhasMore, setConvHasMore] = useState(true);
+  const [messages, setMessages] = useState<any[]>([]);
   const [friendStatus, setFriendStatus] = useState<{
     [userId: string]: "online" | "offline";
   }>({});
@@ -121,12 +100,8 @@ const Chat = () => {
     [userId: string]: boolean;
   }>({});
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [loadingOlder, setloadingOlder] = useState(false);
-
   const { emit, isConnected, off, on, socket } = useWebSocket();
   const { data } = useSession();
-  const userId = data?.user.id;
 
   const getConv = useCallback(async () => {
     if (ConvLoading || !setConvHasMore) return;
@@ -154,34 +129,36 @@ const Chat = () => {
     }
   }, [ConvLoading, ConvhasMore, ConvNextId]);
 
-  const getUserMessage = useCallback(
-    async (conversationId: string) => {
+  const userId = data?.user.id;
+
+  const getMessage = useCallback(
+    async (convId: string) => {
       if (loading || !hasMore) return;
       setLoading(true);
-      try {
-        const res = await getUserMessages(
-          nextId ? nextId?.nextCursor : null,
-          conversationId
-        );
 
+      try {
+        const res = await getMessages(
+          nextId ? nextId?.nextCursor : null,
+          convId
+        );
         const newMessages = res?.data?.allMessages || [];
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
           const uniqueNewMessages = newMessages.filter(
-            (message: Message) => !existingIds.has(message.id)
+            (message: any) => !existingIds.has(message.id)
           );
-          return [...uniqueNewMessages, ...prev];
+          return [...prev, ...uniqueNewMessages];
         });
 
         setNextId(res?.data);
         setHasMore(Boolean(res?.data?.nextCursor));
       } catch (error) {
-        console.error("Error fetching conversations", error);
+        console.error("Error fetching users", error);
       } finally {
         setLoading(false);
       }
     },
-    [loading, hasMore, nextId, selectedChat?.id]
+    [loading, hasMore, nextId]
   );
 
   useEffect(() => {
@@ -243,116 +220,21 @@ const Chat = () => {
     content: string;
     messageType: MessageType;
   }) => {
-    const tempMessage: Message = {
-      id: crypto.randomUUID(),
-      conversationId,
-      senderId,
-      content,
-      messageType,
-      replyToId: null,
-      isEdited: false,
-      isDeleted: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, tempMessage]);
     socket?.emit("newMessage", {
-      id: tempMessage.id,
       conversationId,
       senderId,
       content,
       messageType,
-      createdAt: Date.now(),
     });
-    const scrollEl = messagesEndRef.current?.parentElement as HTMLDivElement; // The scroll container
-
-    if (!scrollEl) return;
-
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
-
     setMessageInput("");
   };
 
-  const isAtBottom = (el: HTMLDivElement) => {
-    const { scrollTop, scrollHeight, clientHeight } = el;
-    return Math.abs(scrollHeight - (scrollTop + clientHeight)) < 1;
-  };
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleIncomingMessage = (message: Message) => {
-      if (message.conversationId === selectedChat?.id) {
-        setMessages((prev) => {
-          return [...prev, message];
-        });
-        const scrollEl = messagesEndRef.current
-          ?.parentElement as HTMLDivElement;
-
-        if (!scrollEl) return;
-        if (isAtBottom(scrollEl)) {
-          setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-          }, 50);
-        }
-      }
-    };
-
-    socket.on("messageReceived", handleIncomingMessage);
-
-    return () => {
-      socket.off("messageReceived", handleIncomingMessage);
-    };
-  }, [socket, selectedChat]);
-
-  useEffect(() => {
-    if (!socket || !selectedChat?.id) return;
-
-    socket.emit("joinConversation", { conversationId: selectedChat.id });
-
-    return () => {
-      socket.emit("leaveConversation", { conversationId: selectedChat.id });
-    };
-  }, [socket, selectedChat]);
-
-  useEffect(() => {
-    if (selectedChat?.id) {
-      getUserMessage(selectedChat.id);
-    }
-  }, [selectedChat]);
-
-  const isInitialLoad = useRef(true);
-
-  useEffect(() => {
-    isInitialLoad.current = true;
-  }, [selectedChat?.id]);
-
-  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
-    const scrollEL = event.target as HTMLDivElement;
-
-    if (isInitialLoad.current) return;
-
-    if (scrollEL.scrollTop <= 100 && !loading && hasMore) {
-      (async () => {
-        await getUserMessage(selectedChat?.id!);
-        setloadingOlder(true);
-      })();
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      console.log("Selected files:", files);
     }
   };
-
-  useEffect(() => {
-    if (messages.length > 0 && isInitialLoad.current) {
-      const scrollEl = messagesEndRef.current?.parentElement as HTMLDivElement;
-      if (!scrollEl) return;
-
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-      scrollEl.scrollTop = scrollEl.scrollHeight;
-      isInitialLoad.current = false;
-    }
-  }, [messages]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -396,17 +278,13 @@ const Chat = () => {
               {conversation.map((conv) => (
                 <button
                   key={conv.id}
-                  onClick={() => {
-                    setSelectedChat(conv);
-                    setMessages([]);
-                    setNextId(null);
-                    setHasMore(true);
-                  }}
+                  onClick={() => setSelectedChat(conv)}
                   className={`w-full p-4 rounded-lg mb-2 text-left transition-all hover:bg-muted/50 ${
                     selectedChat?.id === conv.id ? "bg-muted" : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
+                    {/* Avatar Section */}
                     {conv.participants.map((participant) => {
                       const frd = participant.user;
                       if (!frd) return null;
@@ -450,18 +328,17 @@ const Chat = () => {
                         <p className="text-sm text-muted-foreground truncate">
                           {/* {conv.lastMessagePreview || ""} */}
                         </p>
+                        {/* Example Unread Badge */}
+                        {/* {conv.unread && (
+                <span className="bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full ml-2">
+                  {conv.unread}
+                </span>
+              )} */}
                       </div>
                     </div>
                   </div>
                 </button>
               ))}
-
-              {/* Loading indicator for conversations */}
-              {ConvLoading && (
-                <div className="text-center py-4 text-muted-foreground">
-                  Loading more conversations...
-                </div>
-              )}
             </div>
           </ScrollArea>
         </div>
@@ -522,81 +399,57 @@ const Chat = () => {
                 </div>
               </div>
 
-              <ScrollArea
-                id="Message-scrollbar"
-                className="flex-1 p-4 h-[200px]"
-                onScrollCapture={handleScroll}
-              >
-                <div className="space-y-2 mx-10 overflow-y-auto h-full">
-                  {/* Loading indicator for older messages */}
-                  {loading && (
-                    <div className="text-center py-2 text-muted-foreground text-sm">
-                      Loading older messages...
-                    </div>
-                  )}
-
-                  {messages.map((message) => (
+              <ScrollArea className="flex-1 p-4 h-[200px]">
+                <div className="space-y-4 max-w-4xl mx-auto">
+                  {/* {messages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex ${
-                        message.senderId === userId
-                          ? "justify-end"
-                          : "justify-start"
+                        message.isOwn ? "justify-end" : "justify-start"
                       } animate-fade-in`}
                     >
                       <div
-                        className={`flex gap-2 max-w-[65%] ${
-                          message.senderId === userId ? "flex-row-reverse" : ""
+                        className={`flex gap-3 max-w-[70%] ${
+                          message.isOwn ? "flex-row-reverse" : ""
                         }`}
                       >
-                        {message.senderId !== userId && (
-                          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs flex-shrink-0">
-                            {selectedChat.participants[0].user.name
-                              .charAt(0)
-                              .toUpperCase()}
+                        {!message.isOwn && (
+                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs flex-shrink-0">
+                            {message.sender.charAt(0)}
                           </div>
                         )}
                         <div>
-                          {message.senderId !== userId && (
-                            <p className="text-xs text-muted-foreground mb-0.5">
-                              {selectedChat.participants[0].user.name}
+                          {!message.isOwn && (
+                            <p className="text-xs text-muted-foreground mb-1">
+                              {message.sender}
                             </p>
                           )}
                           <div
-                            className={`rounded-2xl px-3 py-1.5 leading-snug ${
-                              message.senderId === userId
+                            className={`rounded-2xl px-4 py-3 ${
+                              message.isOwn
                                 ? "bg-primary text-primary-foreground rounded-br-sm"
                                 : "bg-card text-card-foreground rounded-bl-sm shadow-subtle"
                             }`}
                           >
-                            <p className="text-sm break-words">
-                              {message.content}
-                            </p>
+                            <p>{message.content}</p>
                           </div>
                           <p
-                            className={`text-[10px] text-muted-foreground mt-0.5 ${
-                              message.senderId === userId ? "text-right" : ""
+                            className={`text-xs text-muted-foreground mt-1 ${
+                              message.isOwn ? "text-right" : ""
                             }`}
                           >
-                            {new Date(
-                              message.updatedAt || message?.timeStamp!
-                            ).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {message.time}
                           </p>
                         </div>
                       </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef}></div>
-                  <ScrollBar orientation="vertical" />
+                  ))} */}
                 </div>
               </ScrollArea>
 
               <div className="p-4 min-h-10 mt-3  border-t border-border  bg-secondary/30">
                 <div className="flex gap-2 justify-center items-center max-w-4xl mx-auto">
-                  <Textarea
+                  <Input
                     placeholder="Type a message..."
                     value={messageInput}
                     onChange={(e) => {
@@ -609,7 +462,6 @@ const Chat = () => {
                     }}
                     onKeyPress={(e) =>
                       e.key === "Enter" &&
-                      messageInput.trim() != "" &&
                       handleSendMessage({
                         content: messageInput,
                         conversationId: selectedChat.id,
@@ -623,12 +475,21 @@ const Chat = () => {
                     type="file"
                     id="file-upload"
                     multiple
+                    onChange={handleFileSelect}
                     className="hidden"
                   />
-
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                      document.getElementById("file-upload")?.click()
+                    }
+                    title="Attach files"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
                   <Button
                     variant="hero"
-                    disabled={!messageInput}
                     onClick={() => {
                       handleSendMessage({
                         content: messageInput,
