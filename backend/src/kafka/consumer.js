@@ -29,7 +29,7 @@ export const runConsumer = async () => {
               senderId: parsed.senderId,
               content: parsed.content,
               messageType: parsed.messageType || "TEXT",
-              createdAt: new Date(parsed.timeStamp),
+              createdAt: new Date(parsed.createdAt),
             };
           });
 

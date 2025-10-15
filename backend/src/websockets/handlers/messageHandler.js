@@ -4,13 +4,15 @@ import { client } from "../../redis/client.js";
 export class SendMessage {
   async SendMessage(socket, data) {
     try {
-      const { conversationId, senderId, content, messageType } = data;
+      const { id, conversationId, senderId, content, messageType, createdAt } =
+        data;
       const message = {
+        id,
         conversationId,
         senderId,
         content,
         messageType,
-        timeStamp: Date.now(),
+        createdAt,
       };
       console.log("📩 New Message:", message);
 
