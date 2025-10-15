@@ -22,3 +22,17 @@ export const getConversations = async (cursor: string | null) => {
   );
   return result.data;
 };
+
+export const getUserMessages = async (
+  cursor: string | null,
+  conversationId: string
+) => {
+  const result = await axios.get(
+    `${
+      process.env.NEXT_PUBLIC_API_URL
+    }/api/v1/conversation/fetchMessages?conversationId=${conversationId}${
+      cursor ? `&cursor=${cursor}` : ""
+    }`
+  );
+  return result.data;
+};
