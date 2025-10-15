@@ -85,10 +85,13 @@ services:
       - kafka
 
   redis:
-    image: redis
+    image: redis/redis-stack:latest
     container_name: chatapp_redis
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
+      - "8001:8001"
     restart: unless-stopped
 
   prisma_studio:
@@ -129,3 +132,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  local-redis-stack.conf:
