@@ -108,7 +108,7 @@ export const getMessages = AsyncHandler(async (req, res) => {
           skip: 1,
           cursor: { id: cursor },
         }),
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     });
 
     const allMessages = [...messages, ...parsedRedisMessage].sort(

@@ -10,14 +10,7 @@ import React, {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  MessageSquare,
-  Send,
-  Search,
-  MoreVertical,
-  ArrowLeft,
-  Paperclip,
-} from "lucide-react";
+import { MessageSquare, Send, Search, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getConversations, getUserMessages } from "@/apis/conversation.api";
@@ -516,9 +509,6 @@ const Chat = () => {
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-5 w-5" />
-                  </Button>
                 </div>
               </div>
 
@@ -551,9 +541,17 @@ const Chat = () => {
                       >
                         {message.senderId !== userId && (
                           <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs flex-shrink-0">
-                            {selectedChat.participants[0].user.name
-                              .charAt(0)
-                              .toUpperCase()}
+                            {selectedChat.participants[0].user.image ? (
+                              <img
+                                src={selectedChat.participants[0].user.image}
+                                className="w-7 h-7 rounded-full"
+                                alt={selectedChat.participants[0].user.name}
+                              />
+                            ) : (
+                              selectedChat.participants[0].user.name
+                                .charAt(0)
+                                .toUpperCase()
+                            )}
                           </div>
                         )}
                         <div>
@@ -569,7 +567,7 @@ const Chat = () => {
                                 : "bg-card text-card-foreground rounded-bl-sm shadow-subtle"
                             }`}
                           >
-                            <p className="text-sm break-words">
+                            <p className="text-sm break-words max-w-80">
                               {message.content}
                             </p>
                           </div>
@@ -617,7 +615,7 @@ const Chat = () => {
                         senderId: data?.user.id!,
                       })
                     }
-                    className="flex-1 bg-input"
+                    className="flex max-h-20 bg-input"
                   />
                   <input
                     type="file"
