@@ -17,7 +17,7 @@ Technologies used
 - Buffering & persistence: Redis (in-memory), Kafka (batching)
 - Database: Postgres (via Prisma)
 - Auth: Better-Auth (email/password + Google OAuth)
-- Other: Cloudinary (media), Multer (uploads), Nodemailer (emails)
+- Other:Nodemailer (emails)
 
 Key features
 
